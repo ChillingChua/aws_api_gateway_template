@@ -1,0 +1,11 @@
+# requirements for the post_call lambda function
+# for reference: they have to be installed in the subdir for the lambda deployment
+# use:
+#   pip install <package> -t /<path>/<to>/post_call
+#
+# this is handled in ansible deployment, and for local dev work, they can just
+# be installed into a normal virtual environment
+
+isodate
+kombu
+testfixtures

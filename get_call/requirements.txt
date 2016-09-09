@@ -1,0 +1,9 @@
+# requirements for the get_call lambda function
+# for reference: they have to be installed in the subdir for the lambda deployment
+# use:
+#   pip install <package> -t /<path>/<to>/get_call
+#
+# this is handled in ansible deployment, and for local dev work, they can just
+# be installed into a normal virtual environment
+kombu
+testfixtures

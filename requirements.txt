@@ -1,0 +1,13 @@
+# requirements summary for virtual environments, not deployment
+# with notes where the package is actually used
+# TODO: maybe find a better centralized method to remove multiple requirement files
+
+# general setup
+boto
+mock
+nose
+testfixtures
+
+# deploy script
+argh
+

@@ -1,0 +1,39 @@
+- name: deploy lambda functions
+  hosts: 127.0.0.1
+  connection: local
+  vars:
+    environ: "{{ environ| default('development') }}"
+    aws_region: eu-west-1
+    aws_user_id: '456531355712'
+    s3_bucket: lambda.deploy.bucket
+    code_path: '../{{ item.code }}'
+    lambda_mem_size: 128
+    lambda_timeout: 30
+
+    # use multiple keys for code/aws name and handler, so we don't need to follow
+    # naming constraints so strictly and can adapt better
+
+    # item.code is the code designator
+    # item.aws_name is the AWS naming convention usage in S3/Lambda etc
+    functions:
+      - { code: 'authentication', aws_name: 'authentication', handler: 'lambda_handler' }
+      - { code: 'delete_call', aws_name: 'delete-something', handler: 'delete_handler' }
+      - { code: 'get_call', aws_name: 'get-stuff', handler: 'get_stuff_handler' }
+      - { code: 'patch_call', aws_name: 'patch-holes', handler: 'patch_handler'}
+      - { code: 'post_call', aws_name: 'add-something', handler: 'add_something_handler' }
+      - { code: 'put_call', aws_name: 'update-entry', handler: 'update_entry_handler' }
+
+  tasks:
+    - include: includes/init_workspace.yml
+      with_items: functions
+
+    - include: includes/build_zip.yml
+      with_items: functions
+
+    - include: includes/copy_to_s3.yml
+      with_items: functions
+
+#    - include: includes/create_CF_lambda.yml
+#      with_items: functions
+#
+#    - include: includes/create_CF_api_gateway.yml

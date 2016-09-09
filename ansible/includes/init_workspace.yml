@@ -1,0 +1,60 @@
+- name: set facts for environment
+  include: 'configs/set_{{ environ }}_facts.yml'
+
+- name: remove item {{ item.code }} from workspace
+  file:
+    path: workspace/{{ item.code }}
+    state: absent
+
+- name: create workspace dir for {{ item.code }}
+  file:
+    path: workspace/{{ item.code }}
+    state: directory
+
+- name: copy in code
+  synchronize:
+    src: '{{ code_path }}/'
+    dest: workspace/{{ item.code }}/
+    delete: yes
+
+- name: setup.cfg for no prefix
+  copy:
+    dest: workspace/{{ item.code }}/setup.cfg
+    content: |
+      [install]
+      prefix=
+
+- name: get absolute path of workspace
+  changed_when: false
+  command: pwd
+  args:
+    chdir: workspace/{{ item.code }}
+  register: abs_workspace_path
+
+- name: check for requirements.txt
+  changed_when: false
+  stat:
+    path: '{{ abs_workspace_path.stdout }}/requirements.txt'
+  register: requirements_result
+
+- name: install dependencies
+  when: requirements_result.stat.exists
+  pip:
+    chdir: '{{ abs_workspace_path.stdout }}'
+    extra_args: '-t .'  # install here, no virtualenv
+    requirements: requirements.txt
+
+- name: add utils dir
+  copy:
+    src: ../utils
+    dest: '{{ abs_workspace_path.stdout }}/'
+
+- name: erase .pyc files
+  command: find . -type f -name "*.py[co]" -delete
+  args:
+    chdir: '{{ abs_workspace_path.stdout }}'
+
+- name: create config.py file
+  template:
+    src=config.py.j2
+    dest='{{ abs_workspace_path.stdout }}/config.py'

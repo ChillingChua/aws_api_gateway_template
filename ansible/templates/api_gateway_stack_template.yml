@@ -1,0 +1,550 @@
+Description: "API Gateway deployment"
+
+Parameters:
+
+  ApiDescription:
+    Description: 'Description string for the API'
+    Type: String
+  ApiName:
+    Description: 'Actual name of API'
+    Type: String
+  HostName:
+    Description: 'Hostname goes in this parameter'
+    Type: String
+
+  AuthArn:
+    Description: 'ARN for the authentication lambda function'
+    Type: String
+  AuthName:
+    Description: 'Name of the auth function in deployment'
+    Type: String
+  AuthTokenName:
+    Description: 'Name of the token used in the request headers'
+    Type: String
+
+  DeleteLambdaArn:
+    Description: 'ARN for the DELETE operation lambda function'
+    Type: String
+  DeleteRequestTemplate:
+    Description: 'Template mapping for the DELETE request'
+    Type: String
+  GetLambdaArn:
+    Description: 'ARN for the GET operation lambda function'
+    Type: String
+  GetIntegrationTemplate:
+    Description: 'Integration mapping template for the GET operation'
+    Type: String
+  GetRequestTemplate:
+    Description: 'Request mapping for GET request to deliver to GET Lambda function'
+    Type: String
+  PatchLambdaArn:
+    Description: 'ARN for the PATCH operation lambda function'
+    Type: String
+  PostLambdaArn:
+    Description: 'ARN for the POST operation lambda function'
+    Type: String
+  PutLambdaArn:
+    Description: 'ARN for the PUT operation lambda function'
+    Type: String
+
+  DeprecatedErrorResponseTemplate:
+    Description: '{{ DeprecatedErrorResponseTemplate }}'
+    Type: String
+  DefaultErrorResponseTemplate:
+    Description: '{{ DefaultErrorResponseTemplate }}'
+    Type: String
+  DuplicateIdResponseTemplate:
+    Description: 'Templates used in duplicate ID on insert response'
+    Type: String
+
+Resources:
+
+  ApiGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Body: {
+          "swagger": "2.0",
+          "info": {
+            "version": "2016-08-09T11:31:33Z",
+            "title": {Ref: ApiName}
+          },
+          "host": {Ref: HostName},
+          "basePath": '/v1.0',
+          "schemes": [
+            "https"
+          ],
+          "paths": {
+            "/post": {
+              "post": {
+                "produces": [
+                  "application/json"
+                ],
+                "parameters": [
+                  {
+                    "name": {Ref: AuthTokeName},
+                    "in": "header",
+                    "required": false,
+                    "type": "string"
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "OK"
+                  },
+                  "400": {
+                    "description": "Bad Request",
+                    "schema": {
+                      "$ref": "#/definitions/ExceptionResponse"
+                    }
+                  },
+                  "403": {
+                    "description": "Forbidden"
+                  },
+                  "409": {
+                    "description": "duplicate ID found response"
+                  },
+                  "500": {
+                    "description": "Internal Server Error"
+                  }
+                },
+                "security": [
+                  {
+                    custom-auth: []
+                  }
+                ],
+                "x-amazon-apigateway-integration": {
+                  "uri": {Ref: PostLambdaArn},
+                  "passthroughBehavior": "when_no_templates",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200"
+                    },
+                    "^409.*": {
+                      "statusCode": "409",
+                      "responseTemplates": {
+                        "application/json": {Ref: DuplicateIdResponseTemplate}
+                      }
+                    },
+                    "^400.*": {
+                      "statusCode": "400",
+                      "responseTemplates": {
+                        "application/json": {Ref: DefaultErrorResponseTemplate}
+                      }
+                    },
+                    "^500.*": {
+                      "statusCode": "500",
+                      "responseTemplates": {
+                        "application/json": {Ref: DefaultErrorResponseTemplate}
+                      }
+                    }
+                  },
+                  "httpMethod": "POST",
+                  "type": "aws"
+                }
+              }
+            },
+            "/get/{some-id}": {
+              "get": {
+                "consumes": [
+                  "application/json"
+                ],
+                "produces": [
+                  "application/json"
+                ],
+                "parameters": [
+                  {
+                    "name": {Ref: AuthTokenName},
+                    "in": "header",
+                    "required": false,
+                    "type": "string"
+                  },
+                  {
+                    "name": "some-id",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "OK"
+                  },
+                  "400": {
+                    "description": "Bad Request",
+                    "schema": {
+                      "$ref": "#/definitions/ExceptionResponse"
+                    }
+                  },
+                  "403": {
+                    "description": "Forbidden"
+                  },
+                  "500": {
+                    "description": "Internal Server Error",
+                    "schema": {
+                      "$ref": "#/definitions/ExceptionResponse"
+                    }
+                  }
+                },
+                "security": [
+                  {
+                    custom-auth: []
+                  }
+                ],
+                "x-amazon-apigateway-integration": {
+                  "requestTemplates": {
+                    "application/json": {Ref: GetRequestTemplate}
+                  },
+                  "uri": {Ref: GertPhoneArn},
+                  "passthroughBehavior": "when_no_templates",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200"
+                    },
+                    "^400.*": {
+                      "statusCode": "400",
+                      "responseTemplates": {
+                        "application/json": {Ref: DeprecatedErrorResponseTemplate}
+                      }
+                    },
+                    "^500.*": {
+                      "statusCode": "500",
+                      "responseTemplates": {
+                        "application/json": {Ref: DeprecatedErrorResponseTemplate}
+                      }
+                    }
+                  },
+                  "httpMethod": "POST",
+                  "type": "aws"
+                }
+              },
+              "put": {
+                "produces": [
+                  "application/json"
+                ],
+                "parameters": [
+                  {
+                    "name": "auth-token",
+                    "in": "header",
+                    "required": false,
+                    "type": "string"
+                  },
+                  {
+                    "name": "some-id",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "OK"
+                  },
+                  "400": {
+                    "description": "Bad Request",
+                    "schema": {
+                      "$ref": "#/definitions/ExceptionResponse"
+                    }
+                  },
+                  "403": {
+                    "description": "Forbidden"
+                  },
+                  "500": {
+                    "description": "Internal Server Error",
+                    "schema": {
+                      "$ref": "#/definitions/ExceptionResponse"
+                    }
+                  }
+                },
+                "security": [
+                  {
+                    {Ref: AuthName}: []
+                  }
+                ],
+                "x-amazon-apigateway-integration": {
+                  "uri": {Ref: PutLambdaArn},
+                  "passthroughBehavior": "when_no_match",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200"
+                    },
+                    "^400.*": {
+                      "statusCode": "400",
+                      "responseTemplates": {
+                        "application/json": {Ref: DeprecatedErrorResponseTemplate}
+                      }
+                    },
+                    "^500.*": {
+                      "statusCode": "500",
+                      "responseTemplates": {
+                        "application/json": {Ref: DeprecatedErrorResponseTemplate}
+                      }
+                    }
+                  },
+                  "httpMethod": "POST",
+                  "type": "aws"
+                }
+              },
+              "delete": {
+                "consumes": [
+                  "application/json"
+                ],
+                "produces": [
+                  "application/json"
+                ],
+                "parameters": [
+                  {
+                    "name": {Ref: AuthTokenName},
+                    "in": "header",
+                    "required": false,
+                    "type": "string"
+                  },
+                  {
+                    "name": "some-id",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "OK"
+                  },
+                  "400": {
+                    "description": "Bad Request",
+                    "schema": {
+                      "$ref": "#/definitions/ExceptionResponse"
+                    }
+                  },
+                  "403": {
+                    "description": "Forbidden"
+                  },
+                  "500": {
+                    "description": "Internal Server Error",
+                    "schema": {
+                      "$ref": "#/definitions/ExceptionResponse"
+                    }
+                  }
+                },
+                "security": [
+                  {
+                    custom-auth: []
+                  }
+                ],
+                "x-amazon-apigateway-integration": {
+                  "requestTemplates": {
+                    "application/json": {Ref: DeleteRequestTemplate}
+                  },
+                  "uri": {Ref: DeleteLambdaArn},
+                  "passthroughBehavior": "when_no_templates",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200"
+                    },
+                    "^500.*": {
+                      "statusCode": "500",
+                      "responseTemplates": {
+                        "application/json": {Ref: DeprecatedErrorResponseTemplate}
+                      }
+                    },
+                    "^400.*": {
+                      "statusCode": "400",
+                      "responseTemplates": {
+                        "application/json": {Ref: DeprecatedErrorResponseTemplate}
+                      }
+                    }
+                  },
+                  "httpMethod": "POST",
+                  "type": "aws"
+                }
+              }
+            },
+            "/patch/{some-id}": {
+              "patch": {
+                "consumes": [
+                  "application/json"
+                ],
+                "produces": [
+                  "application/json"
+                ],
+                "parameters": [
+                  {
+                    "name": {Ref: AuthTokenName},
+                    "in": "header",
+                    "required": false,
+                    "type": "string"
+                  },
+                  {
+                    "name": "some-id",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "OK"
+                  },
+                  "400": {
+                    "description": "Bad Request",
+                    "schema": {
+                      "$ref": "#/definitions/ExceptionResponse"
+                    }
+                  },
+                  "403": {
+                    "description": "Forbidden"
+                  },
+                  "500": {
+                    "description": "Internal Server Error",
+                    "schema": {
+                      "$ref": "#/definitions/ExceptionResponse"
+                    }
+                  }
+                },
+                "security": [
+                  {
+                    custom-auth: []
+                  }
+                ],
+                "x-amazon-apigateway-integration": {
+                  "requestTemplates": {
+                    "application/json": {Ref: GetIntegrationTemplate}
+                  },
+                  "uri": {Ref: PatchLambdaArn},
+                  "passthroughBehavior": "when_no_templates",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200"
+                    },
+                    "^400.*": {
+                      "statusCode": "400",
+                      "responseTemplates": {
+                        "application/json": {Ref: DeprecatedErrorResponseTemplate}
+                      }
+                    },
+                    "^500.*": {
+                      "statusCode": "500",
+                      "responseTemplates": {
+                        "application/json": {Ref: DeprecatedErrorResponseTemplate}
+                      }
+                    }
+                  },
+                  "httpMethod": "POST",
+                  "type": "aws"
+                }
+              }
+            },
+            "/get": {
+              "get": {
+                "consumes": [
+                  "application/json"
+                ],
+                "produces": [
+                  "application/json"
+                ],
+                "parameters": [
+                  {
+                    "name": "auth-token",
+                    "in": "header",
+                    "required": false,
+                    "type": "string"
+                  },
+                  {
+                    "name": "value1",
+                    "in": "query",
+                    "required": false,
+                    "type": "string"
+                  },
+                  {
+                    "name": "value2",
+                    "in": "query",
+                    "required": false,
+                    "type": "string"
+                  },
+                  {
+                    "name": "value3",
+                    "in": "query",
+                    "required": false,
+                    "type": "string"
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "OK"
+                  },
+                  "400": {
+                    "description": "Bad Request",
+                    "schema": {
+                      "$ref": "#/definitions/ExceptionResponse"
+                    }
+                  },
+                  "403": {
+                    "description": "Forbidden"
+                  },
+                  "500": {
+                    "description": "Internal Server Error",
+                    "schema": {
+                      "$ref": "#/definitions/ExceptionResponse"
+                    }
+                  }
+                },
+                "security": [
+                  {
+                    custom-auth: []
+                  }
+                ],
+                "x-amazon-apigateway-integration": {
+                  "requestTemplates": {
+                    "application/json": {Ref: GetIntegrationTemplate}
+                  },
+                  "uri": {Ref: GetLambdaArn},
+                  "passthroughBehavior": "when_no_templates",
+                  "responses": {
+                    "default": {
+                      "statusCode": "200"
+                    },
+                    "^400.*": {
+                      "statusCode": "400",
+                      "responseTemplates": {
+                        "application/json": {Ref: DeprecatedErrorResponseTemplate}
+                      }
+                    },
+                    "^500.*": {
+                      "statusCode": "500",
+                      "responseTemplates": {
+                        "application/json": {Ref: DeprecatedErrorResponseTemplate}
+                      }
+                    }
+                  },
+                  "httpMethod": "POST",
+                  "type": "aws"
+                }
+              }
+            }
+          },
+          "securityDefinitions": {
+            {Ref: AuthName}: {
+              "type": "apiKey",
+              "name": {Ref: AuthTokenName},
+              "in": "header",
+              "x-amazon-apigateway-authtype": "custom",
+              "x-amazon-apigateway-authorizer": {
+                "authorizerResultTtlInSeconds": 300,
+                "identityValidationExpression": ".*",
+                "authorizerUri": {Ref: AuthArn},
+                "type": "token"
+              }
+            }
+          },
+          "definitions": {
+            "ExceptionResponse": {
+              "type": "object",
+              "properties": {
+                "errorMessage": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      Description: {Ref: ApiDescription}
+      Name: {Ref: ApiName}

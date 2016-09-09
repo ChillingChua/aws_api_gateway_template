@@ -1,0 +1,14 @@
+- name: make sure the build dir is present
+  file:
+    path: build/
+    state: directory
+
+- name: remove any old zip
+  file:
+    path: build/{{ environ }}-{{ item.aws_name }}.zip
+    state: absent
+
+- name: zip package
+  command: zip -r ../../build/{{ environ }}-{{ item.aws_name }}.zip .
+  args:
+    chdir: workspace/{{ item.code }}

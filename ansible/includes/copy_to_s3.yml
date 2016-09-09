@@ -1,0 +1,15 @@
+
+- name: copy zip file to s3
+  s3:
+    mode: put
+    src: build/{{ environ }}-{{ item.aws_name }}.zip
+    aws_access_key: '{{ aws_access_key_id }}'
+    aws_secret_key: '{{ aws_secret_access_key }}'
+    region: '{{ aws_region }}'
+    bucket: "{{ s3_bucket }}"
+    object: '{{ environ }}-{{ item.aws_name }}.zip'  # versioning on for bucket, not used @08/08/2016
+
+- name: set {{ item.aws_name }} facts
+  set_fact:
+    function_name: '{{ item.aws_name }}'
+    handler_name: '{{ item.handler }}'

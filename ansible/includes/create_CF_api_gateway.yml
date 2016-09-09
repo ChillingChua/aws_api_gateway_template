@@ -1,0 +1,31 @@
+- name: create API gateway definition from swagger file
+  cloudformation:
+    stack_name: "{{ environ }}-api-gateway-template"
+    region: "{{ aws_region }}"
+    template: templates/api_gateway_stack_template.yml
+    template_format: yaml
+  args:
+    template_parameters:
+      ApiName: '{{ api_name }}'
+      ApiDescription: "test deployment for template"
+      Environ: '{{ environ }}'
+      HostName: "some-template.blub.io"
+
+      AuthArn: "arn:aws:apigateway:{{ aws_region }}:lambda:path/2015-03-31/functions/arn:aws:lambda:{{ aws_region }}:{{ aws_user_id }}:function:{{ environ }}-authentication/invocations"
+      AuthTokenName: "auth-token"
+      AuthName: "{{ environ }}-auth"
+
+      PostLambdaArn: "arn:aws:apigateway:{{ aws_region }}:lambda:path/2015-03-31/functions/arn:aws:lambda:{{ aws_region }}:{{ aws_user_id }}:function:{{ environ }}-add-phone/invocations"
+      DeleteLambdaArn: "arn:aws:apigateway:{{ aws_region }}:lambda:path/2015-03-31/functions/arn:aws:lambda:{{ aws_region }}:{{ aws_user_id }}:function:{{ environ }}-delete-phone/invocations"
+      GetLambdaArn: "arn:aws:apigateway:{{ aws_region }}:lambda:path/2015-03-31/functions/arn:aws:lambda:{{ aws_region }}:{{ aws_user_id }}:function:{{ environ }}-get-phone/invocations"
+      PatchLambdaArn: "arn:aws:apigateway:{{ aws_region }}:lambda:path/2015-03-31/functions/arn:aws:lambda:{{ aws_region }}:{{ aws_user_id }}:function:{{ environ }}-reset-phone/invocations"
+      PutLambdaArn: "arn:aws:apigateway:{{ aws_region }}:lambda:path/2015-03-31/functions/arn:aws:lambda:{{ aws_region }}:{{ aws_user_id }}:function:{{ environ }}-update-phone/invocations"
+
+      DeleteRequestTemplate: "{\"some_id\": \"$input.params('some-id')\", \"modifier_id\": $input.json('$.modifier_id'), \"reason\": $input.json('$.reason'), \"auth-token\": \"$input.params('auth-token')\"}"
+      GetIntegrationTemplate: "{\"value1\": \"$input.params('value1')\", \"value2\": \"$input.params('value2')\", \"value3\": \"$input.params('value3')\", \"some_id\": \"$input.params('some_id')\",\"auth-token\": \"$input.params('auth-token')\"}"
+      GetRequestTemplate: "{\"some_id\": \"$input.params('some-id')\", \"auth-token\": \"$input.params('auth-token')\"}"
+
+      DeprecatedErrorResponseTemplate: "{\"success\" : false, \"message\" : \"$input.path('$.errorMessage')\"}"
+      DefaultErrorResponseTemplate: "#set($msg_array = $input.path('$.errorMessage').split('--')) {\"success\" : false, \"message\" : \"$msg_array[1].trim()\"}"
+      DuplicateIdResponseTemplate: "#set($msg_array = $input.path('$.errorMessage').split('--')) {\"success\" : false, \"message\" : \"$msg_array[1].trim()\" #if($msg_array.size()==3),\"duplicate_id\": \"$msg_array[2].trim()\"#end}"
+

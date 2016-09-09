@@ -1,0 +1,8 @@
+# requirements for the delete_call lambda function
+# for reference: they have to be installed in the subdir for the lambda deployment
+# use:
+#   pip install <package> -t /<path>/<to>/delete_call
+#
+# this is handled in ansible deployment, and for local dev work, they can just
+# be installed into a normal virtual environment for easier use
+# see also requirements.txt in main directory

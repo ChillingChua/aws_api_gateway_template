@@ -1,0 +1,18 @@
+- name: use template to create {{ item.aws_name }} lambda function
+  cloudformation:
+    disable_rollback: false
+    stack_name: "{{ environ }}-{{ item.aws_name }}"
+    state: "present"
+    region: "{{ aws_region }}"
+    template: "templates/lambda_function_stack_template.yml"
+    template_format: "yaml"
+    template_parameters:
+      FunctionName: '{{ environ }}-{{ item.aws_name }}'
+      HandlerName: 'lambda_function.{{ item.code }}_handler'
+      S3Bucket: 'flamingo-{{ environ }}.vertulabs.co.uk'
+      S3Key: '{{ environ }}-{{ item.aws_name }}.zip'
+      MemorySize: '{{ lambda_mem_size }}'
+      RoleName: 'arn:aws:iam::456531355712:role/lambda_basic_vpc_execution'
+      TimeOut: '{{ lambda_timeout }}'
+    tags:
+      Stack: "ansible-cloudformation"
